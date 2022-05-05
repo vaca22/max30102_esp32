@@ -75,31 +75,31 @@ void app_main(void)
 //            vTaskDelay(1);
 //        }
 
-        max30102_fifo_read(max30102_data);		//¶ÁÈ¡Êý¾Ý
-        fir_output[0]=max30102_data[0];
-        fir_output[1]=max30102_data[1];
-
-
-
-
-        if((max30102_data[0]>PPG_DATA_THRESHOLD)&&(max30102_data[1]>PPG_DATA_THRESHOLD))
-        {
-            ppg_data_cache_IR[cache_counter]=fir_output[0];
-            ppg_data_cache_RED[cache_counter]=fir_output[1];
-            cache_counter++;
-        }
-        else
-        {
-            cache_counter=0;
-        }
-
-
-        if(cache_counter>=CACHE_NUMS)
-        {
-            printf("heart rate %d/min   ",max30102_getHeartRate(ppg_data_cache_IR,CACHE_NUMS));
-            printf("o2  %.2f\n",max30102_getSpO2(ppg_data_cache_IR,ppg_data_cache_RED,CACHE_NUMS));
-            cache_counter=0;
-        }
+//        max30102_fifo_read(max30102_data);		//¶ÁÈ¡Êý¾Ý
+//        fir_output[0]=max30102_data[0];
+//        fir_output[1]=max30102_data[1];
+//
+//
+//
+//
+//        if((max30102_data[0]>PPG_DATA_THRESHOLD)&&(max30102_data[1]>PPG_DATA_THRESHOLD))
+//        {
+//            ppg_data_cache_IR[cache_counter]=fir_output[0];
+//            ppg_data_cache_RED[cache_counter]=fir_output[1];
+//            cache_counter++;
+//        }
+//        else
+//        {
+//            cache_counter=0;
+//        }
+//
+//
+//        if(cache_counter>=CACHE_NUMS)
+//        {
+//            printf("heart rate %d/min   ",max30102_getHeartRate(ppg_data_cache_IR,CACHE_NUMS));
+//            printf("o2  %.2f\n",max30102_getSpO2(ppg_data_cache_IR,ppg_data_cache_RED,CACHE_NUMS));
+//            cache_counter=0;
+//        }
         vTaskDelay(1);
     }
 

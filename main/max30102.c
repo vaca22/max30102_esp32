@@ -2,6 +2,7 @@
 #include <stdint-gcc.h>
 
 #include <driver/i2c.h>
+#include <esp_log.h>
 #include "max30102.h"
 
 
@@ -10,7 +11,7 @@ static const char *TAG = "i2c-simple-example";
 #define I2C_MASTER_SCL_IO           CONFIG_I2C_MASTER_SCL      /*!< GPIO number used for I2C master clock */
 #define I2C_MASTER_SDA_IO           CONFIG_I2C_MASTER_SDA      /*!< GPIO number used for I2C master data  */
 #define I2C_MASTER_NUM              0                          /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
-#define I2C_MASTER_FREQ_HZ          400000                     /*!< I2C master clock frequency */
+#define I2C_MASTER_FREQ_HZ          100000                     /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_TIMEOUT_MS       1000
@@ -42,6 +43,8 @@ static esp_err_t wr_max30102_one_data(uint8_t saddress, uint8_t w_data) {
 }
 
 static esp_err_t rd_max30102_data(uint8_t saddress, uint8_t *r_data, uint8_t data_size) {
+
+
     return i2c_master_write_read_device(I2C_MASTER_NUM, MAX30102ADDR,
                                         &saddress, 1,
                                         r_data, data_size,
@@ -63,10 +66,10 @@ void max30102_i2c_read(uint8_t reg_adder, uint8_t *pdata, uint8_t data_size) {
 void max30102_init(void) {
     i2c_master_init();
     uint8_t data;
-    vTaskDelay(1);
+    vTaskDelay(10);
     max30102_i2c_write(MODE_CONFIGURATION, 0x40);  //reset the device
 
-    vTaskDelay(1);
+    vTaskDelay(10);
 
     max30102_i2c_write(INTERRUPT_ENABLE1, 0xE0);
     max30102_i2c_write(INTERRUPT_ENABLE2, 0x00);  //interrupt enable: FIFO almost full flag, new FIFO Data Ready,
@@ -89,11 +92,14 @@ void max30102_init(void) {
     max30102_i2c_write(LED2_PULSE_AMPLITUDE, 0x2f); //RED LED current
 
     max30102_i2c_write(TEMPERATURE_CONFIG, 0x01);   //temp
+    max30102_i2c_write(INTERRUPT_ENABLE1, 0xE0);
+    max30102_i2c_write(INTERRUPT_ENABLE2, 0x00);
+    max30102_i2c_read(INTERRUPT_ENABLE1, &data, 1);
 
-    max30102_i2c_read(INTERRUPT_STATUS1, &data, 1);
-    max30102_i2c_read(INTERRUPT_STATUS2, &data, 1);  //clear status
+    ESP_LOGE("fuck","x1  %d",data);
+    max30102_i2c_read(INTERRUPT_ENABLE2, &data, 1);  //clear status
 
-
+    ESP_LOGE("fuck","x2  %d",data);
 }
 
 
