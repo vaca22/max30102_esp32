@@ -11,7 +11,7 @@ static const char *TAG = "i2c-simple-example";
 #define I2C_MASTER_SCL_IO           CONFIG_I2C_MASTER_SCL      /*!< GPIO number used for I2C master clock */
 #define I2C_MASTER_SDA_IO           CONFIG_I2C_MASTER_SDA      /*!< GPIO number used for I2C master data  */
 #define I2C_MASTER_NUM              0                          /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
-#define I2C_MASTER_FREQ_HZ          100000                     /*!< I2C master clock frequency */
+#define I2C_MASTER_FREQ_HZ          400000                     /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_TIMEOUT_MS       1000
@@ -38,7 +38,7 @@ static esp_err_t i2c_master_init(void) {
 static esp_err_t wr_max30102_one_data(uint8_t saddress, uint8_t w_data) {
     uint8_t write_buf[2] = {saddress, w_data};
     return i2c_master_write_to_device(I2C_MASTER_NUM, MAX30102ADDR,
-                                      write_buf, sizeof(write_buf),
+                                      write_buf, 2,
                                       I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
@@ -60,45 +60,42 @@ void max30102_i2c_write(uint8_t reg_adder, uint8_t data) {
 }
 
 void max30102_i2c_read(uint8_t reg_adder, uint8_t *pdata, uint8_t data_size) {
-    ESP_ERROR_CHECK(rd_max30102_data(reg_adder, pdata, data_size));
+   ESP_ERROR_CHECK(rd_max30102_data(reg_adder,pdata,data_size));
+
+
 }
 
 void max30102_init(void) {
     i2c_master_init();
     uint8_t data;
-    vTaskDelay(10);
-    max30102_i2c_write(MODE_CONFIGURATION, 0x40);  //reset the device
 
-    vTaskDelay(10);
+    max30102_i2c_write(MODE_CONFIGURATION,0x40);  //reset the device
 
-    max30102_i2c_write(INTERRUPT_ENABLE1, 0xE0);
-    max30102_i2c_write(INTERRUPT_ENABLE2, 0x00);  //interrupt enable: FIFO almost full flag, new FIFO Data Ready,
+    vTaskDelay(1);
+
+    max30102_i2c_write(INTERRUPT_ENABLE1,0xE0);
+    max30102_i2c_write(INTERRUPT_ENABLE2,0x00);  //interrupt enable: FIFO almost full flag, new FIFO Data Ready,
     //                   ambient light cancellation overflow, power ready flag,
     //						    		internal temperature ready flag
 
-    max30102_i2c_write(FIFO_WR_POINTER, 0x00);
-    max30102_i2c_write(FIFO_OV_COUNTER, 0x00);
-    max30102_i2c_write(FIFO_RD_POINTER, 0x00);   //clear the pointer
+    max30102_i2c_write(FIFO_WR_POINTER,0x00);
+    max30102_i2c_write(FIFO_OV_COUNTER,0x00);
+    max30102_i2c_write(FIFO_RD_POINTER,0x00);   //clear the pointer
 
-    max30102_i2c_write(FIFO_CONFIGURATION,
-                       0x4F); //FIFO configuration: sample averaging(1),FIFO rolls on full(0), FIFO almost full value(15 empty data samples when interrupt is issued)
+    max30102_i2c_write(FIFO_CONFIGURATION,0x4F); //FIFO configuration: sample averaging(1),FIFO rolls on full(0), FIFO almost full value(15 empty data samples when interrupt is issued)
 
-    max30102_i2c_write(MODE_CONFIGURATION, 0x03);  //MODE configuration:SpO2 mode
+    max30102_i2c_write(MODE_CONFIGURATION,0x03);  //MODE configuration:SpO2 mode
 
-    max30102_i2c_write(SPO2_CONFIGURATION,
-                       0x2A); //SpO2 configuration:ACD resolution:15.63pA,sample rate control:200Hz, LED pulse width:215 us
+    max30102_i2c_write(SPO2_CONFIGURATION,0x2A); //SpO2 configuration:ACD resolution:15.63pA,sample rate control:200Hz, LED pulse width:215 us
 
-    max30102_i2c_write(LED1_PULSE_AMPLITUDE, 0x2f);    //IR LED
-    max30102_i2c_write(LED2_PULSE_AMPLITUDE, 0x2f); //RED LED current
+    max30102_i2c_write(LED1_PULSE_AMPLITUDE,0x2f);	//IR LED
+    max30102_i2c_write(LED2_PULSE_AMPLITUDE,0x2f); //RED LED current
 
-    max30102_i2c_write(TEMPERATURE_CONFIG, 0x01);   //temp
-    max30102_i2c_write(INTERRUPT_ENABLE1, 0xE0);
-    max30102_i2c_write(INTERRUPT_ENABLE2, 0x00);
-    max30102_i2c_read(INTERRUPT_ENABLE1, &data, 1);
+    max30102_i2c_write(TEMPERATURE_CONFIG,0x01);   //temp
 
+    max30102_i2c_read(FIFO_RD_POINTER,&data,1);
     ESP_LOGE("fuck","x1  %d",data);
-    max30102_i2c_read(INTERRUPT_ENABLE2, &data, 1);  //clear status
-
+    max30102_i2c_read(FIFO_RD_POINTER,&data,1);  //clear status
     ESP_LOGE("fuck","x2  %d",data);
 }
 
@@ -111,6 +108,9 @@ void max30102_fifo_read(float *output_data) {
     data[1] = ((receive_data[3] << 16 | receive_data[4] << 8 | receive_data[5]) & 0x03ffff);
     *output_data = data[0];
     *(output_data + 1) = data[1];
+    uint8_t gaga;
+    max30102_i2c_read(FIFO_RD_POINTER,&gaga,1);  //clear status
+    ESP_LOGE("fuck","x2  %d",gaga);
 }
 
 uint16_t max30102_getHeartRate(float *input_data, uint16_t cache_nums) {
