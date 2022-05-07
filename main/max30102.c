@@ -76,9 +76,8 @@ void max30102_init(void) {
     uint8_t data;
 
     max30102_i2c_write(MODE_CONFIGURATION,0x40);  //reset the device
-    max30102_i2c_read(MODE_CONFIGURATION,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
-    vTaskDelay(1);
+
+    vTaskDelay(5);
 
     max30102_i2c_write(INTERRUPT_ENABLE1,0xE0);
     max30102_i2c_write(INTERRUPT_ENABLE2,0x00);  //interrupt enable: FIFO almost full flag, new FIFO Data Ready,
@@ -90,11 +89,9 @@ void max30102_init(void) {
     max30102_i2c_write(FIFO_RD_POINTER,0x00);   //clear the pointer
 
     max30102_i2c_write(FIFO_CONFIGURATION,0x4F); //FIFO configuration: sample averaging(1),FIFO rolls on full(0), FIFO almost full value(15 empty data samples when interrupt is issued)
-    max30102_i2c_read(FIFO_CONFIGURATION,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
+
     max30102_i2c_write(MODE_CONFIGURATION,0x03);  //MODE configuration:SpO2 mode
-    max30102_i2c_read(MODE_CONFIGURATION,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
+
     max30102_i2c_write(SPO2_CONFIGURATION,0x2A); //SpO2 configuration:ACD resolution:15.63pA,sample rate control:200Hz, LED pulse width:215 us
 
     max30102_i2c_write(LED1_PULSE_AMPLITUDE,0x2f);	//IR LED
@@ -102,10 +99,9 @@ void max30102_init(void) {
 
     max30102_i2c_write(TEMPERATURE_CONFIG,0x01);   //temp
 
-    max30102_i2c_read(FIFO_RD_POINTER,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
-    max30102_i2c_read(FIFO_RD_POINTER,&data,1);  //clear status
-    ESP_LOGE("fuck","x2  %d",data);
+    max30102_i2c_read(INTERRUPT_STATUS1,&data,1);
+    max30102_i2c_read(INTERRUPT_STATUS2,&data,1);  //clear status
+
 }
 
 
@@ -117,9 +113,6 @@ void max30102_fifo_read(float *output_data) {
     data[1] = ((receive_data[3] << 16 | receive_data[4] << 8 | receive_data[5]) & 0x03ffff);
     *output_data = data[0];
     *(output_data + 1) = data[1];
-//    uint8_t gaga;
-//    max30102_i2c_read(FIFO_RD_POINTER,&gaga,1);  //clear status
-//    ESP_LOGE("fuck","x2  %d",gaga);
 }
 
 uint16_t max30102_getHeartRate(float *input_data, uint16_t cache_nums) {
