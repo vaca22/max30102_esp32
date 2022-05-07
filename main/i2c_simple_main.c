@@ -93,7 +93,7 @@ void app_main(void)
 //                cache_counter = 0;
 //            }
 ////        }
-        vTaskDelay(10);
+        vTaskDelay(1);
 
     }
 
