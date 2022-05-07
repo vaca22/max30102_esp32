@@ -113,9 +113,6 @@ void max30102_fifo_read(float *output_data)
     data[1] = ((receive_data[3]<<16 | receive_data[4]<<8 | receive_data[5]) & 0x03ffff);
     *output_data = data[0];
     *(output_data+1) = data[1];
-
-
-
 }
 
 uint16_t max30102_getHeartRate(float *input_data,uint16_t cache_nums)

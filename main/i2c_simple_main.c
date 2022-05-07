@@ -71,13 +71,9 @@ void app_main(void)
 
             max30102_fifo_read(max30102_data);
 
-            fir_output[0] = max30102_data[0];
-            fir_output[1] = max30102_data[1];
-
-
             if ((max30102_data[0] > PPG_DATA_THRESHOLD) && (max30102_data[1] > PPG_DATA_THRESHOLD)) {
-                ppg_data_cache_IR[cache_counter] = fir_output[0];
-                ppg_data_cache_RED[cache_counter] = fir_output[1];
+                ppg_data_cache_IR[cache_counter] = max30102_data[0];
+                ppg_data_cache_RED[cache_counter] = max30102_data[1];
                 cache_counter++;
             } else {
                 cache_counter = 0;
