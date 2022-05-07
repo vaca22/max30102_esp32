@@ -23,19 +23,19 @@
 
 static const char *TAG = "i2c-simple-example";
 
-#define GPIO_INPUT_IO_0     4
+#define GPIO_INPUT_IO_0     14
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0))
 #define ESP_INTR_FLAG_DEFAULT 0
 
 static xQueueHandle gpio_evt_queue = NULL;
-
 #define CACHE_NUMS 150
 #define PPG_DATA_THRESHOLD 100000
 uint8_t max30102_int_flag=0;
 
 float ppg_data_cache_RED[CACHE_NUMS]={0};
 float ppg_data_cache_IR[CACHE_NUMS]={0};
-static int fuck=0;
+static int fuck=1;
+
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
@@ -66,34 +66,34 @@ void app_main(void)
     float max30102_data[2],fir_output[2];
     uint32_t io_num;
     while(1) {
-//        if(gpio_get_level(4)==0){
-//          //  ESP_LOGE("fuck","fuckyou");
+        if(fuck==1){
+            fuck=0;
+
             max30102_fifo_read(max30102_data);
-//        }
-////        if(fuck==1){
-//       //     ESP_LOGE("fuck","fuckyou");
-//            fuck=0;
-//            max30102_fifo_read(max30102_data);
-//            fir_output[0] = max30102_data[0];
-//            fir_output[1] = max30102_data[1];
-//
-//
-//            if ((max30102_data[0] > PPG_DATA_THRESHOLD) && (max30102_data[1] > PPG_DATA_THRESHOLD)) {
-//                ppg_data_cache_IR[cache_counter] = fir_output[0];
-//                ppg_data_cache_RED[cache_counter] = fir_output[1];
-//                cache_counter++;
-//            } else {
-//                cache_counter = 0;
-//            }
-//
-//
-//            if (cache_counter >= CACHE_NUMS) {
-//                printf("heart rate %d/min   ", max30102_getHeartRate(ppg_data_cache_IR, CACHE_NUMS));
-//                printf("o2  %.2f\n", max30102_getSpO2(ppg_data_cache_IR, ppg_data_cache_RED, CACHE_NUMS));
-//                cache_counter = 0;
-//            }
-////        }
-        vTaskDelay(1);
+
+            fir_output[0] = max30102_data[0];
+            fir_output[1] = max30102_data[1];
+
+
+            if ((max30102_data[0] > PPG_DATA_THRESHOLD) && (max30102_data[1] > PPG_DATA_THRESHOLD)) {
+                ppg_data_cache_IR[cache_counter] = fir_output[0];
+                ppg_data_cache_RED[cache_counter] = fir_output[1];
+                cache_counter++;
+            } else {
+                cache_counter = 0;
+            }
+
+
+            if (cache_counter >= CACHE_NUMS) {
+                printf("heart rate %d/min   ", max30102_getHeartRate(ppg_data_cache_IR, CACHE_NUMS));
+                printf("o2  %.2f\n", max30102_getSpO2(ppg_data_cache_IR, ppg_data_cache_RED, CACHE_NUMS));
+                cache_counter = 0;
+            }
+        }else{
+            vTaskDelay(1);
+        }
+
+
 
     }
 

@@ -14,7 +14,7 @@ static const char *TAG = "i2c-simple-example";
 #define I2C_MASTER_FREQ_HZ          400000                     /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
-#define I2C_MASTER_TIMEOUT_MS       1000
+#define I2C_MASTER_TIMEOUT_MS       1
 
 #define MAX30102ADDR    (0xae>>1)
 
@@ -76,9 +76,8 @@ void max30102_init(void) {
     uint8_t data;
 
     max30102_i2c_write(MODE_CONFIGURATION,0x40);  //reset the device
-    max30102_i2c_read(MODE_CONFIGURATION,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
-    vTaskDelay(1);
+
+    vTaskDelay(5);
 
     max30102_i2c_write(INTERRUPT_ENABLE1,0xE0);
     max30102_i2c_write(INTERRUPT_ENABLE2,0x00);  //interrupt enable: FIFO almost full flag, new FIFO Data Ready,
@@ -90,11 +89,9 @@ void max30102_init(void) {
     max30102_i2c_write(FIFO_RD_POINTER,0x00);   //clear the pointer
 
     max30102_i2c_write(FIFO_CONFIGURATION,0x4F); //FIFO configuration: sample averaging(1),FIFO rolls on full(0), FIFO almost full value(15 empty data samples when interrupt is issued)
-    max30102_i2c_read(FIFO_CONFIGURATION,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
+
     max30102_i2c_write(MODE_CONFIGURATION,0x03);  //MODE configuration:SpO2 mode
-    max30102_i2c_read(MODE_CONFIGURATION,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
+
     max30102_i2c_write(SPO2_CONFIGURATION,0x2A); //SpO2 configuration:ACD resolution:15.63pA,sample rate control:200Hz, LED pulse width:215 us
 
     max30102_i2c_write(LED1_PULSE_AMPLITUDE,0x2f);	//IR LED
@@ -102,75 +99,89 @@ void max30102_init(void) {
 
     max30102_i2c_write(TEMPERATURE_CONFIG,0x01);   //temp
 
-    max30102_i2c_read(FIFO_RD_POINTER,&data,1);
-    ESP_LOGE("fuck","x1  %d",data);
-    max30102_i2c_read(FIFO_RD_POINTER,&data,1);  //clear status
-    ESP_LOGE("fuck","x2  %d",data);
+    max30102_i2c_read(INTERRUPT_STATUS1,&data,1);
+    max30102_i2c_read(INTERRUPT_STATUS2,&data,1);  //clear status
 }
 
 
-void max30102_fifo_read(float *output_data) {
+void max30102_fifo_read(float *output_data)
+{
     uint8_t receive_data[6];
     uint32_t data[2];
-    max30102_i2c_read(FIFO_DATA, receive_data, 6);
-    data[0] = ((receive_data[0] << 16 | receive_data[1] << 8 | receive_data[2]) & 0x03ffff);
-    data[1] = ((receive_data[3] << 16 | receive_data[4] << 8 | receive_data[5]) & 0x03ffff);
+    max30102_i2c_read(FIFO_DATA,receive_data,6);
+    data[0] = ((receive_data[0]<<16 | receive_data[1]<<8 | receive_data[2]) & 0x03ffff);
+    data[1] = ((receive_data[3]<<16 | receive_data[4]<<8 | receive_data[5]) & 0x03ffff);
     *output_data = data[0];
-    *(output_data + 1) = data[1];
-//    uint8_t gaga;
-//    max30102_i2c_read(FIFO_RD_POINTER,&gaga,1);  //clear status
-//    ESP_LOGE("fuck","x2  %d",gaga);
+    *(output_data+1) = data[1];
+
+
+
 }
 
-uint16_t max30102_getHeartRate(float *input_data, uint16_t cache_nums) {
+uint16_t max30102_getHeartRate(float *input_data,uint16_t cache_nums)
+{
     float input_data_sum_aver = 0;
-    uint16_t i, temp=0;
+    uint16_t i,temp=0;
 
 
-    for (i = 0; i < cache_nums; i++) {
-        input_data_sum_aver += *(input_data + i);
+    for(i=0;i<cache_nums;i++)
+    {
+        input_data_sum_aver += *(input_data+i);
     }
-    input_data_sum_aver = input_data_sum_aver / cache_nums;
-    for (i = 0; i < cache_nums; i++) {
-        if ((*(input_data + i) > input_data_sum_aver) && (*(input_data + i + 1) < input_data_sum_aver)) {
+    input_data_sum_aver = input_data_sum_aver/cache_nums;
+    for(i=0;i<cache_nums;i++)
+    {
+        if((*(input_data+i)>input_data_sum_aver)&&(*(input_data+i+1)<input_data_sum_aver))
+        {
             temp = i;
             break;
         }
     }
     i++;
-    for (; i < cache_nums; i++) {
-        if ((*(input_data + i) > input_data_sum_aver) && (*(input_data + i + 1) < input_data_sum_aver)) {
+    for(;i<cache_nums;i++)
+    {
+        if((*(input_data+i)>input_data_sum_aver)&&(*(input_data+i+1)<input_data_sum_aver))
+        {
             temp = i - temp;
             break;
         }
     }
-    if ((temp > 14) && (temp < 100)) {
-        return 3000 / temp;
-    } else {
+    if((temp>14)&&(temp<100))
+    {
+        return 3000/temp;
+    }
+    else
+    {
         return 0;
     }
 }
 
-float max30102_getSpO2(float *ir_input_data, float *red_input_data, uint16_t cache_nums) {
-    float ir_max = *ir_input_data, ir_min = *ir_input_data;
-    float red_max = *red_input_data, red_min = *red_input_data;
+float max30102_getSpO2(float *ir_input_data,float *red_input_data,uint16_t cache_nums)
+{
+    float ir_max=*ir_input_data,ir_min=*ir_input_data;
+    float red_max=*red_input_data,red_min=*red_input_data;
     float R;
     uint16_t i;
-    for (i = 1; i < cache_nums; i++) {
-        if (ir_max < *(ir_input_data + i)) {
-            ir_max = *(ir_input_data + i);
+    for(i=1;i<cache_nums;i++)
+    {
+        if(ir_max<*(ir_input_data+i))
+        {
+            ir_max=*(ir_input_data+i);
         }
-        if (ir_min > *(ir_input_data + i)) {
-            ir_min = *(ir_input_data + i);
+        if(ir_min>*(ir_input_data+i))
+        {
+            ir_min=*(ir_input_data+i);
         }
-        if (red_max < *(red_input_data + i)) {
-            red_max = *(red_input_data + i);
+        if(red_max<*(red_input_data+i))
+        {
+            red_max=*(red_input_data+i);
         }
-        if (red_min > *(red_input_data + i)) {
-            red_min = *(red_input_data + i);
+        if(red_min>*(red_input_data+i))
+        {
+            red_min=*(red_input_data+i);
         }
     }
 
-    R = ((ir_max + ir_min) * (red_max - red_min)) / ((red_max + red_min) * (ir_max - ir_min));
-    return ((-45.060) * R * R + 30.354 * R + 94.845);
+    R=((ir_max+ir_min)*(red_max-red_min))/((red_max+red_min)*(ir_max-ir_min));
+    return ((-45.060)*R*R + 30.354*R + 94.845);
 }
