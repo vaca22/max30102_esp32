@@ -34,8 +34,8 @@ static const char *TAG = "i2c-simple-example";
 
 uint32_t blockSize = BLOCK_SIZE;
 uint32_t numBlocks = BLOCK_SIZE;
-fir_f32_t *S_red;
-fir_f32_t *S_ir;
+fir_f32_t S_red;
+fir_f32_t S_ir;
 static float firStateF32_ir[BLOCK_SIZE + NUM_TAPS - 1];
 static float firStateF32_red[BLOCK_SIZE + NUM_TAPS - 1];
 
@@ -75,8 +75,8 @@ static void IRAM_ATTR gpio_isr_handler(void *arg) {
 }
 
 void app_main(void) {
-    dsps_fir_init_f32(S_ir, firCoeffs32LP, firStateF32_ir, NUM_TAPS);
-    dsps_fir_init_f32(S_red, firCoeffs32LP, firStateF32_red, NUM_TAPS);
+    dsps_fir_init_f32(&S_ir, firCoeffs32LP, firStateF32_ir, NUM_TAPS);
+    dsps_fir_init_f32(&S_red, firCoeffs32LP, firStateF32_red, NUM_TAPS);
 
 
     gpio_config_t io_conf = {};
@@ -106,8 +106,8 @@ void app_main(void) {
             max30102_fifo_read(max30102_data);
 //            fir_output[0] = max30102_data[0];
 //            fir_output[1] = max30102_data[1];
-            dsps_fir_f32_ansi(S_ir, &max30102_data[0], &fir_output[0], 1);
-            dsps_fir_f32_ansi(S_red, &max30102_data[1], &fir_output[1], 1);
+            dsps_fir_f32_ansi(&S_ir, &max30102_data[0], &fir_output[0], 1);
+            dsps_fir_f32_ansi(&S_red, &max30102_data[1], &fir_output[1], 1);
 
             if ((max30102_data[0] > PPG_DATA_THRESHOLD) && (max30102_data[1] > PPG_DATA_THRESHOLD)) {
                 ppg_data_cache_IR[cache_counter] = fir_output[0];
