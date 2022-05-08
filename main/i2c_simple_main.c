@@ -119,7 +119,7 @@ void app_main(void) {
 
 
             if (cache_counter >= CACHE_NUMS) {
-                printf("heart rate %d/min   ", max30102_getHeartRate(ppg_data_cache_IR, CACHE_NUMS));
+                printf("heart ratcde %d/min   ", max30102_getHeartRate(ppg_data_cache_IR, CACHE_NUMS));
                 printf("o2  %.2f\n", max30102_getSpO2(ppg_data_cache_IR, ppg_data_cache_RED, CACHE_NUMS));
                 cache_counter = 0;
             }
