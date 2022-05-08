@@ -62,7 +62,7 @@ const float firCoeffs32LP[NUM_TAPS] = {
 
 static xQueueHandle gpio_evt_queue = NULL;
 
-#define CACHE_NUMS 150
+#define CACHE_NUMS 300
 #define PPG_DATA_THRESHOLD 100000
 uint8_t max30102_int_flag = 0;
 
